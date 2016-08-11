@@ -156,6 +156,76 @@
 			top: 25px;
 			font-size: 10px;
 		}
+		.nav-pannel-bk{
+			position: fixed;
+			bottom: 70px;
+			height: 135px;
+			width: 100%;
+			background: #000;
+			opacity: 0.9;
+			z-index: 10000;
+		}
+		.nav-pannel{
+			position: fixed;
+			bottom: 70px;
+			height: 135px;
+			width: 100%;
+			background: none;
+			opacity: 0.9;
+			z-index: 10001;
+			color: #fff;
+		}
+		.child-mod{
+			padding: 5px 10px;
+			margin-top: 15px;
+		}
+		.child-mod span{
+			display: inline-block;
+			padding-right: 20px;
+			padding-left: 10px;
+		}
+		.font-size-button{
+			background: none;
+			border: 1px solid #8c8c8c;
+			color: #fff;
+			border-radius: 16px;
+			padding: 5px 40px;
+		}
+		.child-mod button:nth-child(3){
+			margin-left: 10px;
+		}
+		.bk-container{
+			position: relative;
+			width: 30px;
+			height: 30px;
+			border-radius: 15px;
+			background: #f7eee5;
+			display: inline-block;
+			vertical-align: -14px;
+			margin-left: 10px;
+		}
+		.child-mod>div:nth-child(3){
+			background: #e9dfc7;
+		}
+		.child-mod>div:nth-child(4){
+			background: #a4a4a4;
+		}
+		.child-mod>div:nth-child(5){
+			background: #cdefce;
+		}
+		.child-mod>div:nth-child(6){
+			background: #283548;
+		}
+		.bk-container-current{
+			position: absolute;
+			top: -2px;
+			left: -2px;
+			width: 32px;
+			height: 32px;
+			border-radius: 16px;
+			border: 1px solid #ff7800;
+			display: inline-block;
+		}
 	</style>
 	<title>Document</title>
 </head>
@@ -215,13 +285,31 @@
 				</div>
 			</div>
 		</div>
+		<div class="nav-pannel-bk"></div>
 		<div class="nav-pannel" id="font-container">
 			<div class="child-mod">
 				<span>字号</span>
 				<button id="large-font" class="font-size-button">大</button>
 				<button id="small-font" class="font-size-button">小</button>
 			</div>
-			<div class="child-mod"></div>
+			<div class="child-mod">
+				<span>背景</span>
+				<div class="bk-container">
+					<div class="bk-container-current"></div>
+				</div>
+				<div class="bk-container">
+					<div class="bk-container-current" style="display: none"></div>
+				</div>
+				<div class="bk-container">
+					<div class="bk-container-current" style="display: none"></div>
+				</div>
+				<div class="bk-container">
+					<div class="bk-container-current" style="display: none"></div>
+				</div>
+				<div class="bk-container">
+					<div class="bk-container-current" style="display: none"></div>
+				</div>
+			</div>
 		</div>
 	</div>
 
