@@ -56,6 +56,9 @@
 		.u-tab li:nth-child(2){
 			border-right: none;
 		}
+		#m-button{
+			width: 100%;
+		}
 		.m-button-bar{
 			width: 70%;
 			max-width: 800px;
@@ -251,7 +254,7 @@
 		</div>
 		<div id="fiction_chapter_title"></div>
 		<div id="fiction_container" class="m-read-content">
-			<h4>熊得七皇子青眼</h4>
+			<!-- <h4>熊得七皇子青眼</h4>
 			<p>
 				若是平时，能得七皇子青眼，她指不定要高兴成什么样了，可是方才她的名字已经被江旭和江若雪占去了，她若现在说自己是江若雨，可不就明摆着打江旭和江若雪的脸吗？到时候就算七皇子不怪罪于她，江旭与江若雪也绝对不会放过她和娘。
 				若是平时，能得七皇子青眼，她指不定要高兴成什么样了，可是方才她的名字已经被江旭和江若雪占去了，她若现在说自己是江若雨，可不就明摆着打江旭和江若雪的脸吗？到时候就算七皇子不怪罪于她，江旭与江若雪也绝对不会放过她和娘。
@@ -272,13 +275,15 @@
 				若是平时，能得七皇子青眼，她指不定要高兴成什么样了，可是方才她的名字已经被江旭和江若雪占去了，她若现在说自己是江若雨，可不就明摆着打江旭和江若雪的脸吗？到时候就算七皇子不怪罪于她，江旭与江若雪也绝对不会放过她和娘。
 				若是平时，能得七皇子青眼，她指不定要高兴成什么样了，可是方才她的名字已经被江旭和江若雪占去了，她若现在说自己是江若雨，可不就明摆着打江旭和江若雪的脸吗？到时候就算七皇子不怪罪于她，江旭与江若雪也绝对不会放过她和娘。
 				若是平时，能得七皇子青眼，她指不定要高兴成什么样了，可是方才她的名字已经被江旭和江若雪占去了，她若现在说自己是江若雨，可不就明摆着打江旭和江若雪的脸吗？到时候就算七皇子不怪罪于她，江旭与江若雪也绝对不会放过她和娘。
-			</p>
+			</p> -->
 		</div>
-		<div class="m-button-bar">
-			<ul class="u-tab">
-				<li id="prev_button">上一页</li>
-				<li id="next_button">下一页</li>
-			</ul>
+		<div id="m-button">
+			<div class="m-button-bar" >
+				<ul class="u-tab">
+					<li id="prev_button">上一页</li>
+					<li id="next_button">下一页</li>
+				</ul>
+			</div>
 		</div>
 		<div class="bottom_nav" style="display: none">
 			<div class="item menu-button" id="menu-button">
@@ -359,7 +364,7 @@
 						success:function(result){
 							var data = $.base64.decode(result);
 							var json = decodeURIComponent(escape(data));
-							callback(data);
+							callback(json);
 						}
 					})
 				}
@@ -379,6 +384,8 @@
 			}
 			var Win = $(window);
 			var Doc = $(document);
+			var readerModel;
+			var readerUI;
 			var RootContainer = $("#fiction_container");
 			//字体缓存
 			var initFontSize = parseInt(Util.StorageGetter('font_size') || 14);
@@ -386,6 +393,7 @@
 			//背景色缓存
 			var bg_current = Util.StorageGetter('bg_current') || '#f7eee5';
 			RootContainer.css('background-color',bg_current);
+			$('#m-button').css('background-color',bg_current);
 			//白天-黑夜模式缓存
 			var initDayNight = Util.StorageGetter('day_night') || '#night-icon';
 			$(initDayNight).parent().children().css('display','none');
@@ -394,8 +402,11 @@
 			
 			function main(){
 				//整个项目的入口函数
-				var readerModel = ReaderModel();
-				readerModel.init();
+				readerModel = ReaderModel();
+				readerUI = ReaderBaseFrame(RootContainer);
+				readerModel.init(function(data){
+					readerUI(data);
+				});
 				EventHandler();
 
 			}
@@ -404,23 +415,26 @@
 				//实现和阅读器相关的数据交互的方法
 				//获得章节信息
 				var Chapter_id;
-				var init = function(){
+				var ChapterTotal;//总共的章节数
+				var init = function(UIcallback){
 					getFictionInfo(function(){
-						getCurChapterContent(Chapter_id,function(){
-
-						})
+						getCurChapterContent(Chapter_id,function(data){
+							//todo...
+							UIcallback && UIcallback(data);
+						});
 					})
 				}
 				var getFictionInfo = function(callback){
 					$.get('data/chapter.json',function(data){
 						//todo 获得章节信息之后的回调
-						Chapter_id = data.chapters[1].chapter_id;
+						Chapter_id = Util.StorageGetter('Chapter_id') || data.chapters[1].chapter_id;
+						ChapterTotal = data.chapters.length;
 						callback && callback();
 					},'json');
 				}
 				//根据章节信息获得章节内容
-				var getCurChapterContent = function(Chapter_id,data){
-					$.get('data/data' + Chapter_id + '.json',function(data){
+				var getCurChapterContent = function(chapter_id,callback){
+					$.get('data/data' + chapter_id + '.json',function(data){
 						if(data.result == 0){
 							var url = data.jsonp;
 							Util.getJSONP(url,function(data){
@@ -429,13 +443,50 @@
 						}
 					},'json');
 				}
+				//翻上一页
+				var prevChapter = function (UIcallback){
+					Chapter_id = parseInt(Chapter_id,10);
+					if (Chapter_id == 0) {
+						return ;
+					}
+					Chapter_id -= 1;
+					getCurChapterContent(Chapter_id,UIcallback);
+					Util.StorageSetter('Chapter_id',Chapter_id);
+					location += '#top';
+				}
+				//翻下一页
+				var nextChapter = function (UIcallback){
+					//location.substring();
+					Chapter_id = parseInt(Chapter_id,10);
+					if (Chapter_id == ChapterTotal) {
+						return ;
+					}
+					Chapter_id += 1;
+					getCurChapterContent(Chapter_id,UIcallback);
+					Util.StorageSetter('Chapter_id',Chapter_id);
+					location += '#top';
+				}
+
 				return {
-					init:init
+					init:init,
+					prevChapter:prevChapter,
+					nextChapter:nextChapter
 				}
 			}
 
-			function ReaderBaseFrame(){
+			function ReaderBaseFrame(container){
 				//渲染基本的UI结构
+				function parseChapterData(jsonData){
+					var jsonObj = JSON.parse(jsonData);
+					var html = '<h4>' +jsonObj.t+'</h4>';
+					for(var i=0; i<jsonObj.p.length; i++){
+						html += '<p>'+ jsonObj.p[i] +'</p>';
+					}
+					return html;
+				}
+				return function(data){
+					container.html(parseChapterData(data));
+				}
 			}
 
 			function EventHandler(){
@@ -445,7 +496,6 @@
 					if(Dom.top_nav.css('display') === 'none'){
 						Dom.top_nav.show();
 						Dom.bottom_nav.show();
-						console.log($("#bk-night").children().css('display'));
 					}else{
 						Dom.top_nav.hide();
 						Dom.bottom_nav.hide();
@@ -501,6 +551,7 @@
 					var cu = $('#bk-white')
 					bg_current=cu.css('background-color');
 					RootContainer.css('background-color',bg_current);
+					$('#m-button').css('background-color',bg_current);
 					cu.parent().children().children().css('display','none');
 					cu.children().css('display','block');
 					Util.StorageSetter('bg_current',bg_current);
@@ -512,6 +563,7 @@
 					var cu = $('#bk-gray')
 					bg_current=cu.css('background-color');
 					RootContainer.css('background-color',bg_current);
+					$('#m-button').css('background-color',bg_current);
 					cu.parent().children().children().css('display','none');
 					cu.children().css('display','block');
 					Util.StorageSetter('bg_current',bg_current);
@@ -523,6 +575,7 @@
 					var cu = $('#bk-blue')
 					bg_current=cu.css('background-color');
 					RootContainer.css('background-color',bg_current);
+					$('#m-button').css('background-color',bg_current);
 					cu.parent().children().children().css('display','none');
 					cu.children().css('display','block');
 					Util.StorageSetter('bg_current',bg_current);
@@ -534,6 +587,7 @@
 					var cu = $('#bk-night')
 					bg_current=cu.css('background-color');
 					RootContainer.css('background-color',bg_current);
+					$('#m-button').css('background-color',bg_current);
 					cu.parent().children().children().css('display','none');
 					cu.children().css('display','block');
 					Util.StorageSetter('bg_current',bg_current);
@@ -545,6 +599,7 @@
 					var cu = $('#bk-eye')
 					bg_current=cu.css('background-color');
 					RootContainer.css('background-color',bg_current);
+					$('#m-button').css('background-color',bg_current);
 					cu.parent().children().children().css('display','none');
 					cu.children().css('display','block');
 					Util.StorageSetter('bg_current',bg_current);
@@ -556,6 +611,7 @@
 					var cu = $('#bk-paper')
 					bg_current=cu.css('background-color');
 					RootContainer.css('background-color',bg_current);
+					$('#m-button').css('background-color',bg_current);
 					cu.parent().children().children().css('display','none');
 					cu.children().css('display','block');
 					Util.StorageSetter('bg_current',bg_current);
@@ -576,17 +632,24 @@
 					//todo
 					if($('#day-icon').css('display')== 'block'){
 						$('#bk-white').trigger('click');
-						$('#day-icon').css('display','none');
-						$('#night-icon').css('display','block');
-						Util.StorageSetter('day_night','#night-icon');
 					}else{
 						$('#bk-night').trigger('click');
-						$('#day-icon').css('display','block');
-						$('#night-icon').css('display','none');
-						Util.StorageSetter('day_night','#day-icon');
 					}
 				});
 
+				//翻页按钮
+				$("#prev_button").click(function(){
+					//获得章节的翻页数据 -> 拿出数据做渲染
+					readerModel.prevChapter(function(data){
+						readerUI(data);
+					});
+				});
+
+				$("#next_button").click(function(){
+					readerModel.nextChapter(function(data){
+						readerUI(data);
+					});
+				});
 			}
 
 			main();
