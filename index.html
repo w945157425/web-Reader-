@@ -348,6 +348,7 @@
 	<script src="js/jquery.jsonp.js"></script>
 	<script>
 		(function(){
+			'use strict';//使用ES6
 			var Util = (function(){
 				var prefix = 'html5_reader_';
 				var StorageGetter = function(key){
@@ -417,23 +418,43 @@
 				var Chapter_id;
 				var ChapterTotal;//总共的章节数
 				var init = function(UIcallback){
-					getFictionInfo(function(){
+					/*getFictionInfo(function(){
 						getCurChapterContent(Chapter_id,function(data){
 							//todo...
 							UIcallback && UIcallback(data);
 						});
-					})
+					})*/
+					getFictionInfoPromise().then(function(d){
+						return getCurChapterContentPromise();
+					}).then(function(data){
+						UIcallback && UIcallback(data);
+					});
 				}
-				var getFictionInfo = function(callback){
+				/*var getFictionInfo = function(callback){
 					$.get('data/chapter.json',function(data){
 						//todo 获得章节信息之后的回调
 						Chapter_id = Util.StorageGetter('Chapter_id') || data.chapters[1].chapter_id;
 						ChapterTotal = data.chapters.length;
 						callback && callback();
 					},'json');
+				}*/
+
+				var getFictionInfoPromise = function(){
+					return new Promise(function(resolve,reject){
+						$.get('data/chapter.json',function(data){
+							//todo 获得章节信息之后的回调
+							if(data.result == 0){
+								Chapter_id = Util.StorageGetter('Chapter_id') || data.chapters[1].chapter_id;
+								ChapterTotal = data.chapters.length;
+								resolve();	
+							}else{
+								reject();
+							}
+						},'json');
+					});
 				}
 				//根据章节信息获得章节内容
-				var getCurChapterContent = function(chapter_id,callback){
+				/*var getCurChapterContent = function(chapter_id,callback){
 					$.get('data/data' + chapter_id + '.json',function(data){
 						if(data.result == 0){
 							var url = data.jsonp;
@@ -442,9 +463,26 @@
 							});
 						}
 					},'json');
+				}*/
+				var getCurChapterContentPromise = function(){
+					return new Promise(function(resolve,reject){
+						$.get('data/data' + Chapter_id + '.json',function(data){
+							if(data.result == 0){
+								var url = data.jsonp;
+								Util.getJSONP(url,function(data){
+									//callback && callback(data);
+									resolve(data);
+								});
+							}else{
+								reject({msg:'fail'});
+							}
+						},'json');
+					});
 				}
+
 				//翻上一页
 				var prevChapter = function (UIcallback){
+					location.replace('','#top');
 					Chapter_id = parseInt(Chapter_id,10);
 					if (Chapter_id == 0) {
 						return ;
@@ -452,11 +490,11 @@
 					Chapter_id -= 1;
 					getCurChapterContent(Chapter_id,UIcallback);
 					Util.StorageSetter('Chapter_id',Chapter_id);
-					location += '#top';
+					//location += '/#top';
 				}
 				//翻下一页
 				var nextChapter = function (UIcallback){
-					//location.substring();
+					location.replace('','#top');
 					Chapter_id = parseInt(Chapter_id,10);
 					if (Chapter_id == ChapterTotal) {
 						return ;
@@ -464,7 +502,7 @@
 					Chapter_id += 1;
 					getCurChapterContent(Chapter_id,UIcallback);
 					Util.StorageSetter('Chapter_id',Chapter_id);
-					location += '#top';
+					//location += '/#top';
 				}
 
 				return {
@@ -546,43 +584,22 @@
 					$(this).children().css('display','block');
 					Util.StorageSetter('bg_current',bg_current);
 				});*/
+				$('#child-mod-bg').delegate('.bk-container','click',function(){
+					var cu = $(this);
+					if(cu.attr('id') != 'bk-night'){
+						bg_current = cu.css('background-color');
+						//console.log(bg_current);
+						RootContainer.css('background-color',bg_current);
+						$('#m-button').css('background-color',bg_current);
+						cu.parent().children().children().css('display','none');
+						cu.children().css('display','block');
+						Util.StorageSetter('bg_current',bg_current);
+						$('#day-icon').css('display','none');
+						$('#night-icon').css('display','block');
+						Util.StorageSetter('day_night','#night-icon');
+					}
+				});
 
-				$('#bk-white').click(function(){
-					var cu = $('#bk-white')
-					bg_current=cu.css('background-color');
-					RootContainer.css('background-color',bg_current);
-					$('#m-button').css('background-color',bg_current);
-					cu.parent().children().children().css('display','none');
-					cu.children().css('display','block');
-					Util.StorageSetter('bg_current',bg_current);
-					$('#day-icon').css('display','none');
-					$('#night-icon').css('display','block');
-					Util.StorageSetter('day_night','#night-icon');
-				})
-				$('#bk-gray').click(function(){
-					var cu = $('#bk-gray')
-					bg_current=cu.css('background-color');
-					RootContainer.css('background-color',bg_current);
-					$('#m-button').css('background-color',bg_current);
-					cu.parent().children().children().css('display','none');
-					cu.children().css('display','block');
-					Util.StorageSetter('bg_current',bg_current);
-					$('#day-icon').css('display','none');
-					$('#night-icon').css('display','block');
-					Util.StorageSetter('day_night','#night-icon');
-				})
-				$('#bk-blue').click(function(){
-					var cu = $('#bk-blue')
-					bg_current=cu.css('background-color');
-					RootContainer.css('background-color',bg_current);
-					$('#m-button').css('background-color',bg_current);
-					cu.parent().children().children().css('display','none');
-					cu.children().css('display','block');
-					Util.StorageSetter('bg_current',bg_current);
-					$('#day-icon').css('display','none');
-					$('#night-icon').css('display','block');
-					Util.StorageSetter('day_night','#night-icon');
-				})
 				$('#bk-night').click(function(){
 					var cu = $('#bk-night')
 					bg_current=cu.css('background-color');
@@ -594,37 +611,7 @@
 					$('#day-icon').css('display','block');
 					$('#night-icon').css('display','none');
 					Util.StorageSetter('day_night','#day-icon');
-				})
-				$('#bk-eye').click(function(){
-					var cu = $('#bk-eye')
-					bg_current=cu.css('background-color');
-					RootContainer.css('background-color',bg_current);
-					$('#m-button').css('background-color',bg_current);
-					cu.parent().children().children().css('display','none');
-					cu.children().css('display','block');
-					Util.StorageSetter('bg_current',bg_current);
-					$('#day-icon').css('display','none');
-					$('#night-icon').css('display','block');
-					Util.StorageSetter('day_night','#night-icon');
-				})
-				$('#bk-paper').click(function(){
-					var cu = $('#bk-paper')
-					bg_current=cu.css('background-color');
-					RootContainer.css('background-color',bg_current);
-					$('#m-button').css('background-color',bg_current);
-					cu.parent().children().children().css('display','none');
-					cu.children().css('display','block');
-					Util.StorageSetter('bg_current',bg_current);
-					$('#day-icon').css('display','none');
-					$('#night-icon').css('display','block');
-					Util.StorageSetter('day_night','#night-icon');
-				})
-
-				//移除字符串中所有空格
-				function removeAllSpace(str){
-					return str.replace(/\s+/g,'');
-				}
-
+				});
 				
 				//切换白天和夜间模式
 
@@ -655,7 +642,6 @@
 			main();
 
 		})();
-
 
 	</script>
 </body>
